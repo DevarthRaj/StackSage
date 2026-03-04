@@ -1,0 +1,63 @@
+# ============================================================================
+# DEPLOYMENT ONLY — Do NOT run locally during development on low-RAM machines.
+#
+# On an 8GB RAM laptop, run services individually using dev.bat instead.
+# This file is for Railway/Render/production deployment.
+#
+# Total image footprint: ~480MB (api ~250MB, redis ~30MB, qdrant ~200MB)
+# ============================================================================
+
+services:
+  # ── FastAPI Backend ──────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Celery Worker (background tasks) ─────────────────────────────────────
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A celery_worker worker --loglevel=info --concurrency=1
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── Redis (Celery broker + result backend) ───────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+  # ── Qdrant (vector database) — optional, use Qdrant Cloud free tier ─────
+  # Uncomment if you want to run Qdrant locally instead of using Qdrant Cloud
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   ports:
+  #     - "6333:6333"
+  #     - "6334:6334"
+  #   volumes:
+  #     - qdrant_data:/qdrant/storage
+  #   restart: unless-stopped
+
+volumes:
+  redis_data: # qdrant_data:
