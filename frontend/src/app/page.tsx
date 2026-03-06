@@ -2,13 +2,14 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Cpu, FileCode2, GitBranch } from "lucide-react";
+import Link from "next/link";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.15, duration: 0.6, ease: "easeOut" },
+    transition: { delay: i * 0.15, duration: 0.6, ease: "easeOut" as const },
   }),
 };
 
@@ -71,12 +72,12 @@ export default function Home() {
         <span className="text-xl font-bold tracking-tight text-zinc-100">
           Stack<span className="text-emerald-400">Sage</span>
         </span>
-        <a
+        <Link
           href="/sign-in"
           className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-emerald-500/40 hover:text-emerald-400"
         >
           Sign In
-        </a>
+        </Link>
       </nav>
 
       {/* Hero */}
@@ -109,13 +110,13 @@ export default function Home() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
         >
-          <a
+          <Link
             href="/sign-up"
             id="cta-get-started"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25"
           >
             Get Started <ArrowRight className="h-4 w-4" />
-          </a>
+          </Link>
           <a
             href="#features"
             className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-zinc-300 transition-colors hover:border-white/20 hover:text-zinc-100"

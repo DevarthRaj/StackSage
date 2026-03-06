@@ -1,8 +1,7 @@
 import {
     SignInButton,
     SignUpButton,
-    SignedIn,
-    SignedOut,
+    Show,
     UserButton,
 } from "@clerk/nextjs";
 import Link from "next/link";
@@ -17,8 +16,8 @@ export default function Navbar() {
 
             {/* Auth buttons */}
             <div className="flex items-center gap-4">
-                {/* SignedOut: only renders when user is NOT logged in */}
-                <SignedOut>
+                {/* Show when="signed-out": only renders when user is NOT logged in */}
+                <Show when="signed-out">
                     <SignInButton mode="modal">
                         <button className="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors">
                             Sign in
@@ -29,10 +28,10 @@ export default function Navbar() {
                             Get started
                         </button>
                     </SignUpButton>
-                </SignedOut>
+                </Show>
 
-                {/* SignedIn: only renders when user IS logged in */}
-                <SignedIn>
+                {/* Show when="signed-in": only renders when user IS logged in */}
+                <Show when="signed-in">
                     <Link
                         href="/dashboard"
                         className="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
@@ -40,8 +39,8 @@ export default function Navbar() {
                         Dashboard
                     </Link>
                     {/* UserButton shows avatar, clicking it opens profile/sign-out menu */}
-                    <UserButton afterSignOutUrl="/" />
-                </SignedIn>
+                    <UserButton />
+                </Show>
             </div>
         </nav>
     );
