@@ -39,35 +39,36 @@ function FeatureCard({ icon, title, description, index }: FeatureCardProps) {
   );
 }
 
+const features = [
+  {
+    icon: <Cpu className="h-6 w-6" />,
+    title: "Project Blueprint",
+    description:
+      "Get a complete, hardware-aware architecture plan with an interactive tech stack graph. Every tool is checked against your specs.",
+  },
+  {
+    icon: <FileCode2 className="h-6 w-6" />,
+    title: "Agent Prompt Generator",
+    description:
+      "Generate a comprehensive, copy-paste-ready prompt for Claude Code, Cursor, or any coding agent to build your project autonomously.",
+  },
+  {
+    icon: <GitBranch className="h-6 w-6" />,
+    title: "Repo-to-Text",
+    description:
+      "Convert any GitHub repo or local project into a single structured text blob, optimized for LLM context injection with token counting.",
+  },
+];
+
 export default function Home() {
-  const features = [
-    {
-      icon: <Cpu className="h-6 w-6" />,
-      title: "Project Blueprint",
-      description:
-        "Get a complete, hardware-aware architecture plan with an interactive tech stack graph. Every tool is checked against your specs.",
-    },
-    {
-      icon: <FileCode2 className="h-6 w-6" />,
-      title: "Agent Prompt Generator",
-      description:
-        "Generate a comprehensive, copy-paste-ready prompt for Claude Code, Cursor, or any coding agent to build your project autonomously.",
-    },
-    {
-      icon: <GitBranch className="h-6 w-6" />,
-      title: "Repo-to-Text",
-      description:
-        "Convert any GitHub repo or local project into a single structured text blob, optimized for LLM context injection with token counting.",
-    },
-  ];
-
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      {/* Gradient orbs */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[128px]" />
-      <div className="pointer-events-none absolute -bottom-40 right-0 h-[400px] w-[400px] rounded-full bg-cyan-500/8 blur-[96px]" />
+    <div className="relative min-h-screen overflow-hidden bg-zinc-950">
 
-      {/* Nav */}
+      {/* ── Ambient background orbs ───────────────────────────── */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[128px]" />
+      <div className="pointer-events-none absolute -bottom-40 right-0 h-[400px] w-[400px] rounded-full bg-cyan-500/[0.08] blur-[96px]" />
+
+      {/* ── Nav ───────────────────────────────────────────────── */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 md:px-12">
         <span className="text-xl font-bold tracking-tight text-zinc-100">
           Stack<span className="text-emerald-400">Sage</span>
@@ -80,7 +81,7 @@ export default function Home() {
         </Link>
       </nav>
 
-      {/* Hero */}
+      {/* ── Hero ──────────────────────────────────────────────── */}
       <main className="relative z-10 mx-auto max-w-4xl px-6 pt-24 text-center md:pt-36">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -112,21 +113,23 @@ export default function Home() {
         >
           <Link
             href="/sign-up"
-            id="cta-get-started"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25"
           >
             Get Started <ArrowRight className="h-4 w-4" />
           </Link>
-          <a
-            href="#features"
+          {/* Fixed: was <a> tag, now a proper scroll button */}
+          <button
+            onClick={() =>
+              document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
+            }
             className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-zinc-300 transition-colors hover:border-white/20 hover:text-zinc-100"
           >
             Learn More
-          </a>
+          </button>
         </motion.div>
       </main>
 
-      {/* Features */}
+      {/* ── Features ──────────────────────────────────────────── */}
       <section
         id="features"
         className="relative z-10 mx-auto mt-32 max-w-5xl px-6 pb-24"
@@ -140,6 +143,14 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* ── Footer ────────────────────────────────────────────── */}
+      <footer className="relative z-10 border-t border-white/[0.06] px-6 py-6 text-center">
+        <p className="text-xs text-zinc-600">
+          Built with Next.js · FastAPI · LangChain · Qdrant
+        </p>
+      </footer>
+
     </div>
   );
 }
