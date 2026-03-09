@@ -1,0 +1,427 @@
+# StackSage — Agent Build Prompt (v2, Clerk Auth)
+
+> Paste this entire prompt into Claude Code, Cursor Agent, Windsurf, or any capable coding agent to begin building StackSage.
+
+---
+
+## ROLE & MINDSET
+
+You are a **senior AI engineer and full-stack software architect** with deep experience in RAG systems, LLM orchestration, Next.js, and FastAPI. You are building a production-grade web application called **StackSage** from scratch.
+
+Your job is not just to write code — it is to **teach while you build**. For every file you create, every design decision you make, and every tool you integrate, you must:
+
+1. Explain **what** you are doing and **why** in plain English before writing code.
+2. Explain **how** the code works after writing it — especially non-obvious parts.
+3. Flag trade-offs: "I chose X over Y because..., but if your use case changes, consider Y."
+4. Warn about common pitfalls at each step.
+5. Treat the developer reading this as intelligent but still learning — never condescending, always precise.
+
+This is a learning experience as much as a build session. Never skip explanations to save time.
+
+---
+
+## PROJECT OVERVIEW: StackSage
+
+StackSage is a RAG-powered web application that helps developers plan and build any project intelligently. A user inputs:
+- A **project idea** (text description)
+- Their **hardware specifications** (RAM, GPU VRAM, CPU, OS)
+
+The platform then performs three core functions:
+
+### Function 1 — Project Blueprint
+Generate a **complete, detailed guide** on how to build the project:
+- Step-by-step architecture explanation
+- An **interactive visual workflow/graph** of the recommended tech stack and AI tools
+- Node icons and labels for each tool in the graph
+- Hardware-aware filtering: clearly mark which tools/models are **compatible vs. incompatible** with the user's hardware
+- Always include **free/open-source alternatives** alongside paid options
+- Powered by a live RAG pipeline that stays updated with the latest AI tooling
+
+### Function 2 — Agent Implementation Prompt
+Generate a **comprehensive, copy-paste-ready prompt** the user can give to a coding agent (like Claude Code or Cursor). This prompt should:
+- Describe the full project scope
+- Include architecture decisions
+- Specify which tools/libraries to use
+- Include file structure expectations
+- Be detailed enough to maximize how much of the project the agent can implement autonomously
+
+### Function 3 — Repo-to-Text Converter
+A utility that:
+- Accepts a **GitHub repo URL** or a **local file upload**
+- Converts the entire repository into a single structured text blob (similar to repomix/gitingest)
+- Formats it so it can be pasted into an LLM prompt for maximum context injection
+- Shows an estimated token count so the user knows if it fits their target LLM's context window
+- Helps users get dramatically better answers from AI tools by giving them full project context
+
+---
+
+## TECH STACK TO USE
+
+### Frontend
+- **Next.js 14** with App Router and TypeScript
+- **Tailwind CSS** + **shadcn/ui** for components
+- **React Flow** (`@xyflow/react`) for the interactive tech stack graph
+- **Framer Motion** for animations and transitions
+- **Zustand** for client-side state management
+
+### Authentication — Clerk
+- Use **Clerk** (`@clerk/nextjs`) for all authentication — it requires zero server maintenance, never freezes, and has a permanent free tier
+- Clerk handles: sign up, sign in, session management, JWTs, and user identity entirely on their infrastructure
+- On the frontend: wrap the app in `<ClerkProvider>`, use `<SignInButton>`, `<UserButton>`, and the `useUser()` hook where needed
+- On the FastAPI backend: verify the Clerk-issued JWT on every protected route using Clerk's public JWKS endpoint
+- Required environment variables:
+  - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+  - `CLERK_SECRET_KEY`
+  - `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`
+  - `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`
+  - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard`
+  - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard`
+- Explain how Clerk's `middleware.ts` works to automatically protect routes without any manual session checks
+- Explain how to extract `userId` from the Clerk JWT in FastAPI using `python-jose` and Clerk's public JWKS URL (`https://clerk.dev/oauth/jwks`)
+
+### Backend
+- **FastAPI** (Python 3.11+) for all API endpoints
+- **LangChain v0.3+** with LCEL (LangChain Expression Language) for RAG orchestration — do NOT use deprecated v0.1 patterns
+- **Celery** + **Redis** for async background jobs (repo ingestion, RAG index updates)
+- **Pydantic v2** for all request/response validation
+- **SQLite** via SQLAlchemy (async) for storing user project history — zero config, no external DB service needed
+  - Store: `user_id` (from Clerk), `project_name`, `blueprint_json`, `created_at`
+  - Explain how to swap to PostgreSQL for production by changing just the SQLAlchemy connection string
+
+### AI & RAG
+- **Vector Database**: Qdrant (self-hosted via Docker)
+- **Embeddings**: `nomic-embed-text` via Ollama (free/local) OR `text-embedding-3-small` via OpenAI API — configurable via `EMBEDDING_PROVIDER` env var
+- **Primary LLM**: Claude 3.5 Sonnet via Anthropic API for reasoning and generation
+- **Free-tier LLM fallback**: Groq API with `llama-3.3-70b-versatile` — switchable via `LLM_PROVIDER` env var
+- **Reranking**: Cohere Rerank API (free tier) to improve retrieval quality after vector search
+- A **hardware compatibility JSON spec** (`hardware_specs.json`) mapping AI tools/models to minimum hardware requirements
+
+### Repo-to-Text
+- Use the **gitingest** Python library OR a custom GitHub REST API fetcher for public repos
+- Smart filtering: skip `node_modules`, `.git`, `__pycache__`, binary files, and lock files
+- Output format: file tree at the top, then each file with its relative path as a header followed by its content
+- Token count estimation using `tiktoken`
+
+### DevOps
+- **Docker + Docker Compose** orchestrating: FastAPI, Redis, Qdrant, Celery worker
+- **GitHub Actions** for linting and type-checking on push
+- Deployment target: **Vercel** (frontend) + **Railway** (FastAPI + Redis + Celery)
+
+---
+
+## RAG KNOWLEDGE SOURCES
+
+The RAG system must be seeded with and periodically updated from these sources.
+Implement a **weekly cron job** using Celery Beat to re-scrape and re-embed all of them.
+
+| Source | URL / Method | Content Type |
+|---|---|---|
+| Hugging Face Papers | `huggingface.co/papers` | Latest AI research |
+| Papers With Code | `paperswithcode.com/latest` | SOTA methods + code links |
+| GitHub Trending (AI/ML) | `github.com/trending/python?since=weekly` | Hot new tools |
+| Hugging Face Hub (model cards) | Hugging Face Hub Python API | Model capabilities + hardware reqs |
+| OpenRouter Model List | `openrouter.ai/api/v1/models` (JSON API) | LLM pricing + context specs |
+| Ollama Model Library | `ollama.com/library` | Free local models + VRAM requirements |
+| LangChain Changelog | GitHub releases RSS feed | Framework updates |
+| LlamaIndex Changelog | GitHub releases RSS feed | Framework updates |
+| r/LocalLLaMA | Reddit RSS | Free/local AI tool discussion |
+| Towards Data Science | Medium RSS feed | Practical AI tutorials |
+
+For each source implement:
+1. A scraper/fetcher function with proper error handling and retries
+2. A chunking strategy appropriate to the content type (paragraph-level for articles, card-level for model listings)
+3. Metadata tagging: `source`, `date_ingested`, `category`, `hardware_requirements` (where applicable)
+4. Upsert into Qdrant with deduplication by URL hash to avoid duplicate vectors
+
+---
+
+## HARDWARE COMPATIBILITY ENGINE
+
+Create a `hardware_specs.json` file mapping popular AI tools and models to their minimum hardware requirements. Use this schema:
+
+```json
+{
+  "tool_id": "llama-3-8b-local",
+  "name": "Llama 3 8B (local via Ollama)",
+  "category": "LLM",
+  "min_vram_gb": 6,
+  "min_ram_gb": 16,
+  "requires_gpu": true,
+  "cpu_fallback": false,
+  "free": true,
+  "source": "ollama"
+}
+```
+
+When generating a blueprint, the backend must:
+1. Parse the user's hardware input from a structured form: RAM (GB), GPU VRAM (GB), has_gpu (boolean), OS
+2. Filter all recommended tools against `hardware_specs.json`
+3. Return a compatibility label for each tool: `compatible`, `possible_slow`, or `incompatible`
+4. The React Flow graph must visually reflect this — green border for compatible, yellow for possible, red for incompatible
+
+---
+
+## DETAILED BUILD PHASES
+
+Work through these phases in order. **Explain your approach before writing any code for each phase.**
+
+### Phase 1 — Project Scaffold & DevOps Foundation
+1. Initialize the Next.js 14 frontend with TypeScript, Tailwind CSS, and shadcn/ui
+2. Set up the FastAPI backend with a clean project structure: `routers/`, `services/`, `models/`, `schemas/`
+3. Write `docker-compose.yml` orchestrating: FastAPI, Redis, Qdrant, Celery worker
+4. Set up `.env.example` listing every required environment variable with a clear description of each
+5. Configure GitHub Actions workflow for ESLint + Ruff + mypy on every push
+
+### Phase 2 — Clerk Authentication
+1. Install and configure `@clerk/nextjs` in the frontend
+2. Add `middleware.ts` to protect all `/dashboard` routes — explain exactly how Clerk middleware intercepts requests
+3. Build `/sign-in` and `/sign-up` pages using Clerk's pre-built `<SignIn />` and `<SignUp />` components
+4. Add `<UserButton />` to the navbar for session management (profile, sign out)
+5. On the FastAPI side: implement a `verify_clerk_token` dependency using `python-jose` that validates the Clerk JWT on every protected endpoint
+6. Explain the full JWT flow: Clerk issues JWT → frontend sends it as `Authorization: Bearer <token>` → FastAPI fetches Clerk's JWKS → verifies signature → extracts userId
+7. Set up SQLite via async SQLAlchemy to store: `user_id` (Clerk), project history, saved blueprints and prompts
+
+### Phase 3 — RAG Pipeline
+1. Set up the Qdrant collection with the correct vector dimensions for the chosen embedding model — explain what vector dimensions are and why they must match
+2. Build scrapers for at least these 3 sources first: Hugging Face Papers, OpenRouter model list, Ollama library
+3. Implement the chunking and embedding pipeline using LangChain + nomic-embed-text
+4. Build the full retrieval chain using LCEL: `query → embed → qdrant_retriever → cohere_reranker → llm`
+5. Implement the hardware compatibility post-processing step that annotates retrieved tool recommendations with compatibility labels
+6. Implement the Celery Beat weekly cron job to refresh the RAG index from all sources
+
+### Phase 4 — Blueprint Generation (Function 1)
+1. Design and explain the system prompt template for blueprint generation — what instructions produce the best structured output
+2. Implement `/api/generate-blueprint` FastAPI endpoint with **streaming response** using Server-Sent Events (SSE)
+3. Frontend: consume the SSE stream and display generated text in real time with a typewriter effect
+4. Build the React Flow graph component — nodes represent tools, edges represent relationships/dependencies
+5. Color and border-code each node by compatibility status: green (compatible), yellow (possible), red (incompatible)
+6. Add tool icons using Simple Icons CDN or Devicons
+7. Make nodes clickable — clicking a node opens a right-side panel with full details about that tool
+
+### Phase 5 — Agent Prompt Generation (Function 2)
+1. Design the meta-prompt template: a prompt that instructs the LLM to generate a comprehensive implementation prompt for another agent
+2. Implement `/api/generate-agent-prompt` FastAPI endpoint
+3. Frontend: display the output with syntax highlighting and a one-click copy button
+4. Add a customization panel: user can toggle scope (MVP vs. full build), target agent (Claude Code, Cursor, Windsurf), and complexity level before generating
+
+### Phase 6 — Repo-to-Text Converter (Function 3)
+1. Implement a GitHub URL parser that extracts owner and repo name from any standard GitHub URL
+2. Use the GitHub REST API to fetch the full file tree and file contents for public repos (unauthenticated — no token needed for public repos)
+3. Implement smart filtering to skip: `node_modules`, `.git`, `__pycache__`, `*.lock`, `*.log`, and any binary file
+4. Format the output: file tree at the top, then each file as `### path/to/file.ext` header followed by a fenced code block
+5. Use `tiktoken` to estimate token count and display it with a warning if it exceeds common context window limits (e.g. 128k, 200k)
+6. Frontend: URL input field + drag-and-drop for local ZIP upload, output displayed in a scrollable code block with a copy button
+
+### Phase 7 — UI Polish & Final Integration
+1. Build a dark-mode-first landing page explaining StackSage's three features with clear CTAs
+2. Build the main dashboard layout: left sidebar showing project history, main panel with tabs for the three functions
+3. Add loading skeletons for all async operations so the UI never looks broken during generation
+4. Make the React Flow graph fully interactive: zoom, pan, minimap, draggable nodes
+5. Wire all three functions end-to-end with real data — no mock responses
+6. Responsive layout for tablet screens (developer tools don't need to be mobile-first)
+
+---
+
+## CODE QUALITY RULES
+
+- All Python must pass **Ruff** linting and **mypy** strict type checking
+- All TypeScript must pass **ESLint** with zero `any` types
+- Every FastAPI endpoint must have a **Pydantic v2 schema** for both request and response
+- Every React component must have **TypeScript interfaces** for its props
+- All async operations must have proper **error boundaries** and user-facing error messages
+- Write at least **one pytest test** per API endpoint
+
+---
+
+## OUTPUT FORMAT AFTER EACH PHASE
+
+After completing each phase, always provide:
+1. A list of every file created or modified
+2. A 3–5 sentence summary of what was built
+3. A checklist of what to manually test before moving on
+4. Any new environment variables added, with a clear explanation of what each one does
+
+---
+
+## CONSTRAINTS
+
+- Prefer **free and open-source** tools wherever a quality equivalent exists
+- Never hardcode API keys — always use environment variables
+- The app must work fully end-to-end with **zero paid services** if the user configures Ollama (local embeddings) + Groq free tier (LLM) — Clerk's free tier covers auth
+- Keep Docker images lean — use multi-stage builds where applicable
+- Use **LangChain v0.3+ with LCEL only** — never use deprecated chain patterns from v0.1
+- SQLite is the default DB — keep it simple, but document the PostgreSQL upgrade path clearly in a comment or README section
+
+---
+
+## FINAL NOTE TO AGENT
+
+You are building something that will be used by other developers to plan their own projects. The quality bar is high. Think carefully about every design decision, be explicit about trade-offs, and make the codebase as readable and learnable as possible — because that is the entire spirit of StackSage.
+
+Begin with Phase 1. Explain your approach before writing a single line of code.
+
+
+
+
+Constrain Prompt
+
+
+# StackSage — Hardware & Budget Constraints Brief
+# Feed this to your agent AFTER it has generated the implementation plan.
+
+---
+
+## IMPORTANT CONSTRAINTS — READ BEFORE WRITING ANY CODE
+
+Before proceeding with implementation, you must acknowledge and adapt every decision to the following hard constraints. These are not optional — they define how this project must be built.
+
+---
+
+## 1. HARDWARE: 8GB RAM, NO GPU, LIMITED DISK SPACE
+
+The developer is working on a standard HP laptop with:
+- **8GB RAM total**
+- **No dedicated GPU / No CUDA**
+- **~6GB free disk space on the primary drive (C:)**
+- **OS: Windows**
+
+### What this means for every decision you make:
+
+**No local LLM inference.**
+Do not suggest, use, or install Ollama, llama.cpp, LM Studio, or any tool that runs a model locally. These require 6–16GB RAM minimum and will either crash the system or make it unusable. All LLM calls must go to a free cloud API.
+
+**No GPU-accelerated anything.**
+Do not use CUDA, torch with GPU, or any library that requires a GPU driver. If PyTorch is needed for any reason, install the CPU-only version explicitly: `pip install torch --index-url https://download.pytorch.org/whl/cpu`
+
+**Disk space is critical.**
+- Docker images and volumes will consume disk space fast. Be explicit about which images are being pulled and their approximate sizes.
+- Do NOT pull large base images. Use slim/alpine variants wherever possible (e.g. `python:3.11-slim`, `node:20-alpine`).
+- The Qdrant Docker image is ~200MB — acceptable.
+- Do NOT pull any model weights locally under any circumstance.
+- Warn the developer before any `docker pull` or `pip install` that might consume significant space.
+- Total Docker image footprint must stay under 3GB combined.
+
+**Development workflow — services run individually, Docker comes last.**
+- During development, run each service directly (uvicorn, redis-server, celery) rather than via Docker Compose. This avoids Docker overhead eating into the 8GB RAM.
+- Docker Compose is reserved for the final containerization phase only.
+- Write the `docker-compose.yml` early so it is ready, but instruct the developer NOT to run `docker compose up` until Phase 7 (final integration).
+- For local dev, provide a `dev.sh` (or `dev.bat` for Windows) script that starts all services individually in separate terminals.
+
+**Qdrant — use Qdrant Cloud free tier during development.**
+- Do NOT run Qdrant locally in Docker during development on this machine.
+- Instead, use **Qdrant Cloud** (`cloud.qdrant.io`) — free tier gives 1 cluster with 1GB storage, zero RAM cost on the developer's machine.
+- Required env vars: `QDRANT_URL` and `QDRANT_API_KEY` (both provided by Qdrant Cloud dashboard).
+- When writing the final Docker Compose for deployment, include a local Qdrant container as an option but keep Qdrant Cloud as the default via env var.
+
+**Redis — run natively during development.**
+- Install Redis natively: on Windows use `winget install Redis.Redis` or run via WSL2.
+- Do not run Redis in Docker during development.
+- Redis memory usage is minimal (~50MB) so this is fine.
+
+**RAM budget during development (must stay within 8GB):**
+
+| Service | Approx RAM |
+|---|---|
+| Windows OS baseline | ~2.5GB |
+| VS Code + terminal | ~400MB |
+| Chrome (keep tabs minimal) | ~500MB |
+| Next.js dev server | ~300MB |
+| FastAPI (uvicorn) | ~150MB |
+| Celery worker | ~100MB |
+| Redis (native) | ~50MB |
+| **Total** | **~4GB** |
+
+This leaves ~4GB headroom — comfortable. Do not add anything that breaks this budget.
+
+---
+
+## 2. BUDGET: ZERO MONEY — FREE APIS ONLY
+
+The developer will not spend any money. Every external API used must have a genuinely free tier that does not require a credit card or expire after a trial period.
+
+### LLM — Use Groq (Primary)
+- **Provider**: Groq API (`api.groq.com`)
+- **Model**: `llama-3.3-70b-versatile` or `mixtral-8x7b-32768`
+- **Why**: Groq's free tier is permanent, requires no credit card, and is extremely fast (runs on their LPU hardware — not your machine)
+- **Library**: `groq` Python SDK or standard `openai` SDK pointed at Groq's base URL
+- **Env var**: `GROQ_API_KEY`
+- **Rate limits**: ~30 requests/minute on free tier — implement simple retry logic with exponential backoff
+
+### LLM — Gemini Flash (Fallback)
+- **Provider**: Google Gemini API
+- **Model**: `gemini-1.5-flash` or `gemini-2.0-flash`
+- **Why**: Extremely generous free tier (1500 requests/day), no credit card needed
+- **Library**: `google-generativeai` Python SDK
+- **Env var**: `GEMINI_API_KEY`
+- Use this as a fallback when Groq rate limits are hit
+
+### Embeddings — Google text-embedding-004
+- **Provider**: Google Gemini API (same key as above)
+- **Model**: `text-embedding-004`
+- **Why**: Free, high quality (768 dimensions), no GPU needed, same API key as Gemini Flash
+- **Important**: When setting up Qdrant collection, set vector size to **768** to match this model
+- Do NOT use OpenAI embeddings (requires paid API key)
+- Do NOT use nomic-embed-text via Ollama (requires local compute)
+
+### Reranking — Cohere Free Tier
+- **Provider**: Cohere API (`api.cohere.com`)
+- **Model**: `rerank-english-v3.0`
+- **Why**: Free tier available with no credit card, good quality reranking
+- **Env var**: `COHERE_API_KEY`
+- If Cohere rate limits are hit, fall back to simple cosine similarity scoring (implement this fallback explicitly)
+
+### Auth — Clerk Free Tier
+- Free up to 10,000 monthly active users, no credit card, never expires, project never freezes
+- **Env vars**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
+
+### Summary of all required API keys (all free, no credit card):
+
+| Service | Where to get it | Env var name |
+|---|---|---|
+| Groq | `console.groq.com` | `GROQ_API_KEY` |
+| Google Gemini | `aistudio.google.com` | `GEMINI_API_KEY` |
+| Cohere | `dashboard.cohere.com` | `COHERE_API_KEY` |
+| Clerk | `dashboard.clerk.com` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` |
+| Qdrant Cloud | `cloud.qdrant.io` | `QDRANT_URL` + `QDRANT_API_KEY` |
+
+---
+
+## 3. RAG SCRAPER — NO BACKGROUND DAEMON DURING DEVELOPMENT
+
+The weekly Celery Beat cron job for RAG updates must **not run as a background daemon during development** — it wastes RAM on an 8GB machine.
+
+Instead:
+- Build a FastAPI endpoint: `POST /api/admin/refresh-rag` that triggers the scrape-and-embed pipeline manually
+- Add a "Refresh Knowledge Base" button in the dashboard UI that calls this endpoint
+- The Celery Beat scheduler should still be written and configured — just disabled locally via an env var `ENABLE_SCHEDULED_RAG_REFRESH=false`
+- On deployment (Railway), set `ENABLE_SCHEDULED_RAG_REFRESH=true` to activate the cron
+
+---
+
+## 4. DOCKER — FINAL PHASE ONLY
+
+Docker Compose must be written during Phase 1 as planned, but:
+- Add a clear comment at the top of `docker-compose.yml`: "For deployment only — do not run locally during development on low-RAM machines"
+- Provide a `docker-compose.dev.yml` that runs ONLY Redis + Qdrant (lightweight services) for developers who want partial containerization
+- The full `docker-compose.yml` (all services) is for Railway/Render deployment only
+- Before the final Docker phase, warn the developer to: free up disk space, close all browser tabs, and ensure at least 4GB free RAM before running `docker compose up --build`
+
+---
+
+## 5. WINDOWS-SPECIFIC NOTES
+
+- All shell scripts must have a `.bat` or PowerShell equivalent alongside any `.sh` file
+- File paths in Python must use `pathlib.Path` — never hardcoded forward/backslashes
+- For WSL2 users: note which commands should run in WSL2 vs Windows terminal where relevant
+- Redis on Windows: recommend WSL2 installation as the most reliable method, with `winget` as the alternative
+
+---
+
+## FINAL INSTRUCTION TO AGENT
+
+Every time you are about to suggest installing something, pulling a Docker image, or adding a new dependency, pause and ask yourself:
+1. Does this require a GPU? → If yes, find a CPU/API alternative.
+2. Does this cost money? → If yes, find a free tier alternative.
+3. Does this consume significant disk or RAM? → If yes, flag it explicitly and suggest a lighter option.
+
+This constraint brief overrides any conflicting decisions in the implementation plan. Update the plan accordingly before writing code.

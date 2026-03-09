@@ -8,6 +8,7 @@ export default function SignInPage() {
             <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[128px]" />
 
             <SignIn
+                forceRedirectUrl="/dashboard"
                 appearance={{
                     variables: {
                         // Base colors — maps to your zinc-950 / emerald palette
