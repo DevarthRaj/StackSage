@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     # ── Vector DB (Qdrant Cloud free tier during dev) ────────────────────
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str | None = None
+    qdrant_collection_name: str = "stacksage_docs"
+    embedding_dimension: int = 768
 
     # ── Auth (Clerk) ─────────────────────────────────────────────────────
     clerk_secret_key: str | None = None
