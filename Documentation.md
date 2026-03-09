@@ -1,4 +1,5 @@
-# Project Structure Documentation
+# Date: 04/03/2026
+# Project Structure Documentation 
 
 ## CI/CD Configuration
 
@@ -118,7 +119,7 @@ Imagine a user clicks "Refresh Knowledge Base." That job takes 3 minutes (scrapi
 **`celery_worker.py`** is the process you run separately that actually executes those background tasks. It's always listening to Redis for new work.
 
 
-
+# Date: 06/03/2026
 # StackSage — Phase 2 Documentation
 ## Authentication with Clerk
 
@@ -469,3 +470,163 @@ All of the following were verified working at the end of Phase 2:
 - Building the **manual RAG refresh endpoint** (`POST /api/admin/refresh-rag`) as a button in the dashboard
 
 Phase 3 is the most technically complex phase of the project. Take it one step at a time.
+
+# StackSage — Phase 3 Documentation (Steps 1–5)
+## RAG Pipeline — Foundation & Vector Database Setup
+
+**Project:** StackSage | **Phase:** 3 of 7 (Partial) | **Status:** 🔄 In Progress  
+**Date:** March 10, 2026 | **Stack:** FastAPI · LangChain · Qdrant · Groq · Cohere · Celery
+
+---
+
+## What Was Built
+
+- All Phase 3 dependencies installed into virtual environment
+- `.env` updated with Groq, Gemini, Cohere, Qdrant Cloud, Redis keys
+- `config.py` updated with `qdrant_collection_name` and `embedding_dimension`
+- `hardware_specs.json` created — 15 tools with RAM/VRAM/GPU requirements
+- `qdrant_service.py` created — full Qdrant Cloud interface (setup, upsert, search)
+
+---
+
+## Concepts Learned
+
+### 1. RAG (Retrieval Augmented Generation)
+Makes an LLM smarter by fetching relevant context before answering.
+```
+User question → embed → search Qdrant → rerank → send to LLM → answer
+```
+
+### 2. Vector Embedding
+Converts text into 768 numbers representing its meaning. Similar meanings = similar vectors. Enables semantic search (search by meaning, not keywords).
+
+### 3. Why Embedding Dimension = 768
+Fixed property of Google's `text-embedding-004` model. Every input always outputs exactly 768 numbers. Qdrant needs this upfront to build its index. Switching models = recreate collection.
+
+| Model | Dimensions |
+|---|---|
+| Google text-embedding-004 | 768 |
+| OpenAI text-embedding-3-small | 1536 |
+| Nomic embed-text | 768 |
+| BGE-small | 384 |
+
+### 4. Qdrant
+Vector database — stores and searches vectors by mathematical similarity.
+
+| Concept | SQL Equivalent |
+|---|---|
+| Collection | Table |
+| Point | Row |
+| Payload | Columns |
+| Upsert | INSERT OR UPDATE |
+
+### 5. Cosine Similarity
+Measures angle between vectors. Score 1.0 = identical, 0.0 = unrelated. Standard for text search.
+
+### 6. Singleton Pattern
+`Settings` (capital) = class/blueprint. `settings` (lowercase) = one instance created once, shared across entire app. `.env` read exactly once at startup.
+
+### 7. Pydantic-settings
+Reads and validates env vars with Python types. `str | None` lets app start even if a key is missing — error only appears when that service is actually called.
+
+### 8. Upsert vs Insert
+Upsert = update if exists, insert if not. Uses MD5 hash of URL as deterministic ID — same document scraped twice updates instead of duplicating. Called **idempotent**.
+
+### 9. hardware_specs.json Limitation
+It's a hardcoded seed file — known trade-off. Phase 6 replaces it with:
+```
+Layer 1: Admin DB (most flexible)
+Layer 2: OpenRouter API (live LLM data)
+Layer 3: hardware_specs.json (fallback)
+```
+
+### 10. Inheritance in config.py
+`Settings` inherits `BaseSettings` — gets `.env` reading, type validation, and priority ordering for free without writing any of that logic.
+
+---
+
+## Steps Completed
+
+### Step 1 — Install Dependencies
+```bash
+cd backend
+venv\Scripts\activate
+pip install qdrant-client langchain langchain-community langchain-groq google-generativeai langchain-google-genai cohere httpx beautifulsoup4 celery redis tiktoken python-dotenv
+pip freeze > requirements.txt
+```
+
+### Step 2 — Update `.env`
+```bash
+QDRANT_URL=https://your-cluster.qdrant.io
+QDRANT_API_KEY=your-key
+GEMINI_API_KEY=your-key
+GROQ_API_KEY=your-key
+COHERE_API_KEY=your-key
+REDIS_URL=redis://localhost:6379/0
+```
+Keys from: `cloud.qdrant.io` · `aistudio.google.com` · `console.groq.com` · `dashboard.cohere.com`
+
+### Step 3 — Update `config.py`
+Added two lines to Qdrant section:
+```python
+qdrant_collection_name: str = "stacksage_docs"
+embedding_dimension: int = 768
+```
+
+### Step 4 — Create `hardware_specs.json`
+15 tools including Llama (Groq API), Gemini Flash, Whisper, SDXL, Qdrant, YOLOv8, Next.js, FastAPI. Each has `min_ram_gb`, `min_vram_gb`, `requires_gpu`, `free`, `cpu_fallback`.
+
+### Step 5 — Create `qdrant_service.py`
+
+| Function | Purpose |
+|---|---|
+| `get_qdrant_client()` | Sync client for startup setup |
+| `get_async_qdrant_client()` | Async client for request handlers |
+| `setup_qdrant_collection()` | Creates collection if not exists |
+| `make_point_id(url, i)` | MD5 hash ID for deduplication |
+| `upsert_documents()` | Stores chunks + vectors in batches of 100 |
+| `search_documents()` | Semantic search with optional category filter |
+
+---
+
+## Q&A
+
+| Question | Answer |
+|---|---|
+| `settings` vs `Settings`? | `Settings` = class, `settings` = instance (object with real values) |
+| Is `settings` a class or function? | Neither — it's an object (instance) |
+| Why dimension = 768? | Fixed property of Google's embedding model |
+| Why is JSON hardcoded? | Seed file only — Phase 6 replaces with live APIs |
+| Why `str | None` for keys? | App starts without every key configured |
+
+---
+
+## Files Changed
+```
+backend/
+├── app/
+│   ├── config.py              ✅ Updated
+│   ├── data/
+│   │   └── hardware_specs.json ✅ Created
+│   └── services/
+│       └── qdrant_service.py  ✅ Created
+├── .env                       ✅ Updated
+└── requirements.txt           ✅ Updated
+```
+
+---
+
+## Remaining Steps
+
+| Step | File | 
+|---|---|
+| 6 | `embedding_service.py` |
+| 7 | `hardware_filter.py` |
+| 8 | Scrapers (OpenRouter, Ollama, HuggingFace) |
+| 9 | `rag_chain.py` |
+| 10 | `rag_models.py` |
+| 11 | `rag.py` router |
+| 12 | `rag_tasks.py` |
+| 13–17 | Celery, main.py, Redis, seed DB |
+
+*Next session: Step 6 — `embedding_service.py`*
