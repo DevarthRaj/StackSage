@@ -1,22 +1,22 @@
 import { SignUp } from "@clerk/nextjs";
+import { Background } from "@/components/Background";
 
 export default function SignUpPage() {
     return (
         <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-zinc-950">
-
-            <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[128px]" />
+            <Background variant="minimal" />
 
             <SignUp
                 forceRedirectUrl="/dashboard"
                 appearance={{
                     variables: {
-                        colorBackground: "#09090b",
-                        colorInputBackground: "#18181b",
-                        colorInputText: "#f4f4f5",
-                        colorText: "#f4f4f5",
-                        colorTextSecondary: "#a1a1aa",
-                        colorPrimary: "#10b981",
-                        colorDanger: "#f87171",
+                        colorBackground: "oklch(0.145 0 0)",
+                        colorInputBackground: "oklch(0.205 0 0)",
+                        colorInputText: "oklch(0.985 0 0)",
+                        colorText: "oklch(0.985 0 0)",
+                        colorTextSecondary: "oklch(0.708 0 0)",
+                        colorPrimary: "oklch(0.723 0.219 149.214)",
+                        colorDanger: "oklch(0.704 0.191 22.216)",
                         borderRadius: "0.75rem",
                         fontFamily: "inherit",
                     },
@@ -25,7 +25,7 @@ export default function SignUpPage() {
                         headerTitle: "text-zinc-100 font-bold",
                         headerSubtitle: "text-zinc-400",
                         formFieldInput:
-                            "border-white/10 bg-zinc-900 text-zinc-100 placeholder-zinc-500 focus:border-emerald-500/50 focus:ring-emerald-500/20",
+                            "border-white/10 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-500/50 focus:ring-emerald-500/20",
                         formFieldLabel: "text-zinc-300 text-sm",
                         formButtonPrimary:
                             "bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors",

@@ -120,7 +120,85 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* RTL support with logical properties */
+  :dir(rtl) {
+    direction: rtl;
+  }
 }
+
+/* Text overflow utilities */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Flex/Grid overflow prevention */
+.flex-item {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.grid-item {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Fluid typography */
+.fluid-text {
+  font-size: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+}
+
+/* Focus visible for accessibility */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950;
+}
+
+/* Touch target minimum */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Semantic colors */
+.semantic-success { color: oklch(0.723 0.219 149.214); }
+.semantic-warning { color: oklch(0.795 0.184 84.325); }
+.semantic-error { color: oklch(0.704 0.191 22.216); }
+.semantic-info { color: oklch(0.685 0.173 249.夸6); }
+
+.bg-semantic-success { background-color: oklch(0.723 0.219 149.214); }
+.bg-semantic-warning { background-color: oklch(0.795 0.184 84.325); }
+.bg-semantic-error { background-color: oklch(0.704 0.191 22.216); }
+.bg-semantic-info { background-color: oklch(0.685 0.173 249.944); }

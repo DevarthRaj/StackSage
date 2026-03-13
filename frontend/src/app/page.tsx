@@ -3,6 +3,10 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Cpu, FileCode2, GitBranch } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Background } from "@/components/Background";
+import Navbar from "@/components/Navbar";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -21,20 +25,28 @@ interface FeatureCardProps {
 }
 
 function FeatureCard({ icon, title, description, index }: FeatureCardProps) {
+  const colors = [
+    "bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20",
+    "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20", 
+    "bg-rose-500/10 text-rose-400 group-hover:bg-rose-500/20",
+  ];
+  
   return (
     <motion.div
       custom={index}
       variants={fadeUp}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true }}
-      className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-sm transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.06]"
+      viewport={{ once: true, margin: "-24px" }}
+      className="group"
     >
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 transition-colors group-hover:bg-emerald-500/20">
-        {icon}
-      </div>
-      <h3 className="mb-2 text-lg font-semibold text-zinc-100">{title}</h3>
-      <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
+      <Card variant="glass" className="h-full transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.06] hover:-translate-y-1">
+        <div className={`mb-4 flex h-12 w-12 min-w-[48px] items-center justify-center rounded-xl transition-colors ${colors[index % colors.length]}`}>
+          {icon}
+        </div>
+        <h3 className="mb-2 text-lg font-semibold text-zinc-100 truncate">{title}</h3>
+        <p className="text-sm leading-relaxed text-zinc-400 line-clamp-3">{description}</p>
+      </Card>
     </motion.div>
   );
 }
@@ -64,41 +76,30 @@ export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-zinc-950">
 
-      {/* ── Ambient background orbs ───────────────────────────── */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[128px]" />
-      <div className="pointer-events-none absolute -bottom-40 right-0 h-[400px] w-[400px] rounded-full bg-cyan-500/[0.08] blur-[96px]" />
+      <Background />
 
-      {/* ── Nav ───────────────────────────────────────────────── */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 md:px-12">
-        <span className="text-xl font-bold tracking-tight text-zinc-100">
-          Stack<span className="text-emerald-400">Sage</span>
-        </span>
-        <Link
-          href="/sign-in"
-          className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-emerald-500/40 hover:text-emerald-400"
-        >
-          Sign In
-        </Link>
-      </nav>
+      <Navbar />
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <main className="relative z-10 mx-auto max-w-4xl px-6 pt-24 text-center md:pt-36">
+      <main className="relative z-10 mx-auto max-w-4xl px-6 pt-16 text-center md:pt-24 lg:pt-32">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
         >
-          <span className="mb-6 inline-block rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-emerald-400">
+          <span className="mb-4 md:mb-6 inline-block rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-emerald-400 md:px-4">
             RAG-Powered Project Planning
           </span>
-          <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-zinc-50 md:text-6xl md:leading-[1.1]">
+          <h1 className="mt-4 font-bold leading-tight tracking-tight text-zinc-50 
+            text-[2.5rem] md:text-[3.5rem] lg:text-[4.5rem]] 
+            md:leading-[1.1] lg:leading-[1.05]">
             Plan any project with
             <br />
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="text-amber-400">
               AI intelligence
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 md:text-lg">
             Input your idea and hardware specs. Get a full architecture
             blueprint, an agent-ready implementation prompt, and tools to
             maximize your AI workflow — all for free.
@@ -109,35 +110,36 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+          className="mt-8 md:mt-10 flex flex-col items-center gap-3 md:gap-4 sm:flex-row sm:justify-center"
         >
-          <Link
-            href="/sign-up"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25"
-          >
-            Get Started <ArrowRight className="h-4 w-4" />
+          <Link href="/sign-up">
+            <Button size="lg">
+              Get Started <ArrowRight className="h-4 w-4" />
+            </Button>
           </Link>
-          {/* Fixed: was <a> tag, now a proper scroll button */}
-          <button
+          <Button
+            variant="accent"
+            size="lg"
             onClick={() =>
               document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
             }
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-zinc-300 transition-colors hover:border-white/20 hover:text-zinc-100"
+            aria-label="Learn more about StackSage features"
           >
             Learn More
-          </button>
+          </Button>
         </motion.div>
       </main>
 
       {/* ── Features ──────────────────────────────────────────── */}
       <section
         id="features"
-        className="relative z-10 mx-auto mt-32 max-w-5xl px-6 pb-24"
+        className="relative z-10 mx-auto mt-20 px-6 pb-16 md:mt-28 md:max-w-5xl md:pb-24 lg:mt-32"
+        aria-labelledby="features-heading"
       >
-        <h2 className="mb-12 text-center text-2xl font-bold text-zinc-100 md:text-3xl">
+        <h2 id="features-heading" className="mb-8 text-center text-2xl font-bold text-zinc-100 md:mb-12 md:text-3xl lg:text-4xl">
           Three tools, one platform
         </h2>
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, i) => (
             <FeatureCard key={feature.title} {...feature} index={i} />
           ))}
