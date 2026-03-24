@@ -307,13 +307,6 @@ This project is in active development. If you find a bug or want to suggest a RA
 
 ---
 
-## Author
-
-**Jimmy** — Third year CS student at Mar Athanasius College of Engineering, Kothamangalam, Kerala.  
-GitHub: [@DevarthRaj](https://github.com/DevarthRaj)
-
----
-
 ## License
 
-MIT — do whatever you want with it.
+MIT 
